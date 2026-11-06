@@ -114,6 +114,17 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS yearly_contribution_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            year INTEGER NOT NULL,
+            contributions INTEGER NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -281,5 +292,25 @@ def save_weekly_commit_snapshots(
             [
                 (login, week.week_start, week.commits, collected_at)
                 for week in weeks
+            ],
+        )
+
+
+def save_yearly_contribution_snapshots(
+    *,
+    login: str,
+    collected_at: str,
+    years: tuple,
+) -> None:
+    with connect() as connection:
+        connection.executemany(
+            """
+            INSERT INTO yearly_contribution_snapshots (
+                login, year, contributions, collected_at
+            ) VALUES (?, ?, ?, ?)
+            """,
+            [
+                (login, year.year, year.contributions, collected_at)
+                for year in years
             ],
         )
