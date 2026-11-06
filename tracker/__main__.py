@@ -13,6 +13,7 @@ from tracker.languages import collect_top_languages, format_report as format_lan
 from tracker.pull_requests import collect_pull_requests, format_report as format_pull_requests
 from tracker.streak import collect_current_streak, collect_longest_streak
 from tracker.streak import format_longest_report, format_report as format_streak
+from tracker.weekly_commits import collect_weekly_commits, format_report as format_weekly_commits
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -59,6 +60,11 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Issues opened by the user",
     )
+    subcommands.add_parser(
+        "weekly-commits",
+        parents=[login],
+        help="Contribution commits per week",
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -76,6 +82,8 @@ def main(argv: list[str] | None = None) -> int:
             print(format_pull_requests(collect_pull_requests(args.login)))
         elif args.command == "issues":
             print(format_issues(collect_issues(args.login)))
+        elif args.command == "weekly-commits":
+            print(format_weekly_commits(collect_weekly_commits(args.login)))
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
