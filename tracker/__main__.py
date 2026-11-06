@@ -7,7 +7,8 @@ import sys
 
 from tracker.contributions import collect_contributions, format_report as format_contributions
 from tracker.gh import GhError
-from tracker.streak import collect_current_streak, format_report as format_streak
+from tracker.streak import collect_current_streak, collect_longest_streak
+from tracker.streak import format_longest_report, format_report as format_streak
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -29,6 +30,11 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Current contribution streak",
     )
+    subcommands.add_parser(
+        "longest-streak",
+        parents=[login],
+        help="Longest contribution streak",
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -36,6 +42,8 @@ def main(argv: list[str] | None = None) -> int:
             print(format_contributions(collect_contributions(args.login)))
         elif args.command == "streak":
             print(format_streak(collect_current_streak(args.login)))
+        elif args.command == "longest-streak":
+            print(format_longest_report(collect_longest_streak(args.login)))
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
