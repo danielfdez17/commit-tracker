@@ -47,6 +47,38 @@ def graphql(query: str, **variables: str) -> dict:
     return payload["data"]
 
 
+def get(path: str) -> dict | list:
+    """GET a GitHub REST path through `gh api` and return the JSON body."""
+    if shutil.which("gh") is None:
+        raise GhError("GitHub CLI (gh) is not installed.")
+
+    result = subprocess.run(
+        ["gh", "api", "--paginate", path],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
+
+    payload = None
+    if stdout:
+        try:
+            payload = json.loads(stdout)
+        except json.JSONDecodeError:
+            payload = None
+
+    if result.returncode != 0 or payload is None:
+        message = _error_message(payload if isinstance(payload, dict) else None, stderr, stdout)
+        raise GhError(message)
+
+    if not isinstance(payload, (dict, list)):
+        raise GhError(stderr or stdout or "gh returned an empty response.")
+
+    return payload
+
+
 def _error_message(payload: dict | None, stderr: str, stdout: str) -> str:
     if isinstance(payload, dict) and payload.get("errors"):
         messages = [error.get("message", "") for error in payload["errors"]]
