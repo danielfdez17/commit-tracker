@@ -10,6 +10,7 @@ from tracker.contributions import collect_contributions, format_report as format
 from tracker.followers import collect_followers, format_report as format_followers
 from tracker.follower_changes import collect_follower_changes, format_report as format_follower_changes
 from tracker.following import collect_following, format_report as format_following
+from tracker.organizations import collect_organizations, format_report as format_organizations
 from tracker.gh import GhError
 from tracker.issues import collect_issues, format_report as format_issues
 from tracker.languages import collect_top_languages, format_report as format_languages
@@ -98,6 +99,11 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Accounts the user follows",
     )
+    subcommands.add_parser(
+        "organizations",
+        parents=[login],
+        help="Organizations the user belongs to",
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -127,6 +133,8 @@ def main(argv: list[str] | None = None) -> int:
             print(format_follower_changes(collect_follower_changes(args.login)))
         elif args.command == "following":
             print(format_following(collect_following(args.login)))
+        elif args.command == "organizations":
+            print(format_organizations(collect_organizations(args.login)))
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
