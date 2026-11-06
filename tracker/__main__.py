@@ -7,6 +7,7 @@ import sys
 
 from tracker.contributions import collect_contributions, format_report as format_contributions
 from tracker.gh import GhError
+from tracker.languages import collect_top_languages, format_report as format_languages
 from tracker.streak import collect_current_streak, collect_longest_streak
 from tracker.streak import format_longest_report, format_report as format_streak
 
@@ -35,6 +36,11 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Longest contribution streak",
     )
+    subcommands.add_parser(
+        "languages",
+        parents=[login],
+        help="Top languages by code size",
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -44,6 +50,8 @@ def main(argv: list[str] | None = None) -> int:
             print(format_streak(collect_current_streak(args.login)))
         elif args.command == "longest-streak":
             print(format_longest_report(collect_longest_streak(args.login)))
+        elif args.command == "languages":
+            print(format_languages(collect_top_languages(args.login)))
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
