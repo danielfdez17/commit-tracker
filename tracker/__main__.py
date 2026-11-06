@@ -7,6 +7,7 @@ import sys
 
 from tracker.commits import collect_commits, format_report as format_commits
 from tracker.contributions import collect_contributions, format_report as format_contributions
+from tracker.dashboard import serve_dashboard
 from tracker.followers import collect_followers, format_report as format_followers
 from tracker.follower_changes import collect_follower_changes, format_report as format_follower_changes
 from tracker.following import collect_following, format_report as format_following
@@ -104,6 +105,13 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Organizations the user belongs to",
     )
+    dashboard = subcommands.add_parser(
+        "dashboard",
+        parents=[login],
+        help="Show the stored snapshots in a local page",
+    )
+    dashboard.add_argument("--host", default="127.0.0.1")
+    dashboard.add_argument("--port", type=int, default=8765)
 
     args = parser.parse_args(argv)
     try:
@@ -135,6 +143,11 @@ def main(argv: list[str] | None = None) -> int:
             print(format_following(collect_following(args.login)))
         elif args.command == "organizations":
             print(format_organizations(collect_organizations(args.login)))
+        elif args.command == "dashboard":
+            try:
+                serve_dashboard(args.login, host=args.host, port=args.port)
+            except KeyboardInterrupt:
+                return 0
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
