@@ -8,6 +8,7 @@ import sys
 from tracker.commits import collect_commits, format_report as format_commits
 from tracker.contributions import collect_contributions, format_report as format_contributions
 from tracker.followers import collect_followers, format_report as format_followers
+from tracker.follower_changes import collect_follower_changes, format_report as format_follower_changes
 from tracker.gh import GhError
 from tracker.issues import collect_issues, format_report as format_issues
 from tracker.languages import collect_top_languages, format_report as format_languages
@@ -86,6 +87,11 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Followers of the user",
     )
+    subcommands.add_parser(
+        "follower-changes",
+        parents=[login],
+        help="Who followed and unfollowed the user",
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -111,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
             print(format_repositories(collect_public_repositories(args.login)))
         elif args.command == "followers":
             print(format_followers(collect_followers(args.login)))
+        elif args.command == "follower-changes":
+            print(format_follower_changes(collect_follower_changes(args.login)))
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
