@@ -65,6 +65,19 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS commit_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            scope TEXT NOT NULL,
+            total INTEGER NOT NULL,
+            period_from TEXT NOT NULL,
+            period_to TEXT NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -154,4 +167,24 @@ def save_language_snapshots(
                 )
                 for language in languages
             ],
+        )
+
+
+def save_commit_snapshot(
+    *,
+    login: str,
+    scope: str,
+    total: int,
+    period_from: str,
+    period_to: str,
+    collected_at: str,
+) -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO commit_snapshots (
+                login, scope, total, period_from, period_to, collected_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (login, scope, total, period_from, period_to, collected_at),
         )
