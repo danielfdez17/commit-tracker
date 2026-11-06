@@ -7,3 +7,4 @@
 include mk/config.mk
 include mk/help.mk
 include mk/git.mk
+include mk/tracker.mk
