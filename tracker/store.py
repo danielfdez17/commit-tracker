@@ -103,6 +103,17 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS weekly_commit_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            week_start TEXT NOT NULL,
+            commits INTEGER NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -251,4 +262,24 @@ def save_issue_snapshot(
             ) VALUES (?, ?, ?, ?, ?)
             """,
             (login, opened, open_count, closed_count, collected_at),
+        )
+
+
+def save_weekly_commit_snapshots(
+    *,
+    login: str,
+    collected_at: str,
+    weeks: tuple,
+) -> None:
+    with connect() as connection:
+        connection.executemany(
+            """
+            INSERT INTO weekly_commit_snapshots (
+                login, week_start, commits, collected_at
+            ) VALUES (?, ?, ?, ?)
+            """,
+            [
+                (login, week.week_start, week.commits, collected_at)
+                for week in weeks
+            ],
         )
