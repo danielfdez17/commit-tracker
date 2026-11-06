@@ -137,6 +137,26 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS follower_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            followers INTEGER NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS follower_member_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            follower_login TEXT NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -344,4 +364,30 @@ def save_public_repository_snapshot(
             ) VALUES (?, ?, ?, ?, ?)
             """,
             (login, public_count, source_count, fork_count, collected_at),
+        )
+
+
+def save_follower_snapshot(
+    *,
+    login: str,
+    followers: int,
+    follower_logins: tuple[str, ...],
+    collected_at: str,
+) -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO follower_snapshots (
+                login, followers, collected_at
+            ) VALUES (?, ?, ?)
+            """,
+            (login, followers, collected_at),
+        )
+        connection.executemany(
+            """
+            INSERT INTO follower_member_snapshots (
+                login, follower_login, collected_at
+            ) VALUES (?, ?, ?)
+            """,
+            [(login, follower_login, collected_at) for follower_login in follower_logins],
         )
