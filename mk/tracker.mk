@@ -2,7 +2,7 @@
 
 GH_LOGIN ?=
 
-.PHONY: contributions streak longest-streak languages commits pull-requests issues
+.PHONY: contributions streak longest-streak languages commits pull-requests issues weekly-commits
 contributions: ## Total GitHub contributions (last year and all time)
 	@$(PRINT_BANNER) "Total contributions"
 	@python3 -m tracker contributions $(if $(GH_LOGIN),--login $(GH_LOGIN),)
@@ -30,3 +30,7 @@ pull-requests: ## Pull requests opened on GitHub
 issues: ## Issues opened on GitHub
 	@$(PRINT_BANNER) "Issues opened"
 	@python3 -m tracker issues $(if $(GH_LOGIN),--login $(GH_LOGIN),)
+
+weekly-commits: ## Contribution commits per week
+	@$(PRINT_BANNER) "Commits per week"
+	@python3 -m tracker weekly-commits $(if $(GH_LOGIN),--login $(GH_LOGIN),)
