@@ -157,6 +157,17 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS follower_change_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            follower_login TEXT NOT NULL,
+            change TEXT NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -390,4 +401,51 @@ def save_follower_snapshot(
             ) VALUES (?, ?, ?)
             """,
             [(login, follower_login, collected_at) for follower_login in follower_logins],
+        )
+
+
+def latest_follower_logins(login: str, before: str | None = None) -> tuple[str, ...] | None:
+    """Return the newest stored follower list, or None when no snapshot exists."""
+    sql = """
+        SELECT collected_at FROM follower_snapshots
+        WHERE login = ?
+    """
+    parameters: list[str] = [login]
+    if before is not None:
+        sql += " AND collected_at < ?"
+        parameters.append(before)
+    sql += " ORDER BY collected_at DESC LIMIT 1"
+    with connect() as connection:
+        row = connection.execute(sql, parameters).fetchone()
+        if row is None:
+            return None
+        members = connection.execute(
+            """
+            SELECT follower_login FROM follower_member_snapshots
+            WHERE login = ? AND collected_at = ?
+            """,
+            (login, row["collected_at"]),
+        ).fetchall()
+    return tuple(member["follower_login"] for member in members)
+
+
+def save_follower_changes(
+    *,
+    login: str,
+    followed: tuple[str, ...],
+    unfollowed: tuple[str, ...],
+    collected_at: str,
+) -> None:
+    rows = [(login, follower_login, "followed", collected_at) for follower_login in followed]
+    rows.extend(
+        (login, follower_login, "unfollowed", collected_at) for follower_login in unfollowed
+    )
+    with connect() as connection:
+        connection.executemany(
+            """
+            INSERT INTO follower_change_snapshots (
+                login, follower_login, change, collected_at
+            ) VALUES (?, ?, ?, ?)
+            """,
+            rows,
         )
