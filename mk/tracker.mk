@@ -2,7 +2,7 @@
 
 GH_LOGIN ?=
 
-.PHONY: contributions streak longest-streak languages commits
+.PHONY: contributions streak longest-streak languages commits pull-requests
 contributions: ## Total GitHub contributions (last year and all time)
 	@$(PRINT_BANNER) "Total contributions"
 	@python3 -m tracker contributions $(if $(GH_LOGIN),--login $(GH_LOGIN),)
@@ -22,3 +22,7 @@ languages: ## Top GitHub languages by code size
 commits: ## Total GitHub contribution commits (last year and all time)
 	@$(PRINT_BANNER) "Total commits"
 	@python3 -m tracker commits $(if $(GH_LOGIN),--login $(GH_LOGIN),)
+
+pull-requests: ## Pull requests opened on GitHub
+	@$(PRINT_BANNER) "Pull requests"
+	@python3 -m tracker pull-requests $(if $(GH_LOGIN),--login $(GH_LOGIN),)
