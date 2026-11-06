@@ -2,7 +2,7 @@
 
 GH_LOGIN ?=
 
-.PHONY: contributions streak longest-streak languages commits pull-requests issues weekly-commits yearly-contributions public-repositories followers follower-changes following organizations
+.PHONY: contributions streak longest-streak languages commits pull-requests issues weekly-commits yearly-contributions public-repositories followers follower-changes following organizations dashboard
 contributions: ## Total GitHub contributions (last year and all time)
 	@$(PRINT_BANNER) "Total contributions"
 	@python3 -m tracker contributions $(if $(GH_LOGIN),--login $(GH_LOGIN),)
@@ -58,3 +58,7 @@ following: ## Accounts the user follows
 organizations: ## Organizations the user belongs to
 	@$(PRINT_BANNER) "Organizations"
 	@python3 -m tracker organizations $(if $(GH_LOGIN),--login $(GH_LOGIN),)
+
+dashboard: ## Local page of the stored GitHub snapshots
+	@$(PRINT_BANNER) "Dashboard"
+	@python3 -m tracker dashboard $(if $(GH_LOGIN),--login $(GH_LOGIN),)
