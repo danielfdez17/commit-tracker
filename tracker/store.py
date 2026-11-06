@@ -191,6 +191,28 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS organization_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            organizations INTEGER NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS organization_member_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            organization_login TEXT NOT NULL,
+            role TEXT NOT NULL,
+            state TEXT NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -503,5 +525,33 @@ def save_following_snapshot(
             + [
                 (login, followed_login, "Organization", collected_at)
                 for followed_login in organizations
+            ],
+        )
+
+
+def save_organization_snapshot(
+    *,
+    login: str,
+    organizations: tuple,
+    collected_at: str,
+) -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO organization_snapshots (
+                login, organizations, collected_at
+            ) VALUES (?, ?, ?)
+            """,
+            (login, len(organizations), collected_at),
+        )
+        connection.executemany(
+            """
+            INSERT INTO organization_member_snapshots (
+                login, organization_login, role, state, collected_at
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            [
+                (login, organization.login, organization.role, organization.state, collected_at)
+                for organization in organizations
             ],
         )
