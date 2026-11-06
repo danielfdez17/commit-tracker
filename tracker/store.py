@@ -125,6 +125,18 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS public_repository_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            public_count INTEGER NOT NULL,
+            source_count INTEGER NOT NULL,
+            fork_count INTEGER NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -313,4 +325,23 @@ def save_yearly_contribution_snapshots(
                 (login, year.year, year.contributions, collected_at)
                 for year in years
             ],
+        )
+
+
+def save_public_repository_snapshot(
+    *,
+    login: str,
+    public_count: int,
+    source_count: int,
+    fork_count: int,
+    collected_at: str,
+) -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO public_repository_snapshots (
+                login, public_count, source_count, fork_count, collected_at
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (login, public_count, source_count, fork_count, collected_at),
         )
