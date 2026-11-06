@@ -2,7 +2,7 @@
 
 GH_LOGIN ?=
 
-.PHONY: contributions streak longest-streak languages commits pull-requests issues weekly-commits yearly-contributions public-repositories followers follower-changes
+.PHONY: contributions streak longest-streak languages commits pull-requests issues weekly-commits yearly-contributions public-repositories followers follower-changes following
 contributions: ## Total GitHub contributions (last year and all time)
 	@$(PRINT_BANNER) "Total contributions"
 	@python3 -m tracker contributions $(if $(GH_LOGIN),--login $(GH_LOGIN),)
@@ -50,3 +50,7 @@ followers: ## GitHub followers
 follower-changes: ## Who followed and unfollowed the user
 	@$(PRINT_BANNER) "Follower changes"
 	@python3 -m tracker follower-changes $(if $(GH_LOGIN),--login $(GH_LOGIN),)
+
+following: ## Accounts the user follows
+	@$(PRINT_BANNER) "Followed users"
+	@python3 -m tracker following $(if $(GH_LOGIN),--login $(GH_LOGIN),)
