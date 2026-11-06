@@ -14,6 +14,10 @@ from tracker.pull_requests import collect_pull_requests, format_report as format
 from tracker.streak import collect_current_streak, collect_longest_streak
 from tracker.streak import format_longest_report, format_report as format_streak
 from tracker.weekly_commits import collect_weekly_commits, format_report as format_weekly_commits
+from tracker.yearly_contributions import (
+    collect_yearly_contributions,
+    format_report as format_yearly_contributions,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,6 +69,11 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Contribution commits per week",
     )
+    subcommands.add_parser(
+        "yearly-contributions",
+        parents=[login],
+        help="Contributions per calendar year",
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -84,6 +93,8 @@ def main(argv: list[str] | None = None) -> int:
             print(format_issues(collect_issues(args.login)))
         elif args.command == "weekly-commits":
             print(format_weekly_commits(collect_weekly_commits(args.login)))
+        elif args.command == "yearly-contributions":
+            print(format_yearly_contributions(collect_yearly_contributions(args.login)))
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
