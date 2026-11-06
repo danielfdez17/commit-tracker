@@ -78,6 +78,19 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS pull_request_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            opened INTEGER NOT NULL,
+            open_count INTEGER NOT NULL,
+            closed_count INTEGER NOT NULL,
+            merged_count INTEGER NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -187,4 +200,24 @@ def save_commit_snapshot(
             ) VALUES (?, ?, ?, ?, ?, ?)
             """,
             (login, scope, total, period_from, period_to, collected_at),
+        )
+
+
+def save_pull_request_snapshot(
+    *,
+    login: str,
+    opened: int,
+    open_count: int,
+    closed_count: int,
+    merged_count: int,
+    collected_at: str,
+) -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO pull_request_snapshots (
+                login, opened, open_count, closed_count, merged_count, collected_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (login, opened, open_count, closed_count, merged_count, collected_at),
         )
