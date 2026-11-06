@@ -38,6 +38,18 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS longest_streak_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            longest_streak INTEGER NOT NULL,
+            streak_from TEXT,
+            streak_to TEXT,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -77,4 +89,23 @@ def save_streak_snapshot(
             ) VALUES (?, ?, ?, ?, ?)
             """,
             (login, current_streak, streak_from, streak_to, collected_at),
+        )
+
+
+def save_longest_streak_snapshot(
+    *,
+    login: str,
+    longest_streak: int,
+    streak_from: str | None,
+    streak_to: str | None,
+    collected_at: str,
+) -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO longest_streak_snapshots (
+                login, longest_streak, streak_from, streak_to, collected_at
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (login, longest_streak, streak_from, streak_to, collected_at),
         )
