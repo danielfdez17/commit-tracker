@@ -2,7 +2,7 @@
 
 GH_LOGIN ?=
 
-.PHONY: contributions streak longest-streak languages commits pull-requests issues weekly-commits yearly-contributions
+.PHONY: contributions streak longest-streak languages commits pull-requests issues weekly-commits yearly-contributions public-repositories
 contributions: ## Total GitHub contributions (last year and all time)
 	@$(PRINT_BANNER) "Total contributions"
 	@python3 -m tracker contributions $(if $(GH_LOGIN),--login $(GH_LOGIN),)
@@ -38,3 +38,7 @@ weekly-commits: ## Contribution commits per week
 yearly-contributions: ## GitHub contributions per calendar year
 	@$(PRINT_BANNER) "Contributions per year"
 	@python3 -m tracker yearly-contributions $(if $(GH_LOGIN),--login $(GH_LOGIN),)
+
+public-repositories: ## Public GitHub repositories owned by the user
+	@$(PRINT_BANNER) "Public repositories"
+	@python3 -m tracker public-repositories $(if $(GH_LOGIN),--login $(GH_LOGIN),)
