@@ -9,6 +9,7 @@ from tracker.commits import collect_commits, format_report as format_commits
 from tracker.contributions import collect_contributions, format_report as format_contributions
 from tracker.gh import GhError
 from tracker.languages import collect_top_languages, format_report as format_languages
+from tracker.pull_requests import collect_pull_requests, format_report as format_pull_requests
 from tracker.streak import collect_current_streak, collect_longest_streak
 from tracker.streak import format_longest_report, format_report as format_streak
 
@@ -47,6 +48,11 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Total contribution commits",
     )
+    subcommands.add_parser(
+        "pull-requests",
+        parents=[login],
+        help="Pull requests opened by the user",
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -60,6 +66,8 @@ def main(argv: list[str] | None = None) -> int:
             print(format_languages(collect_top_languages(args.login)))
         elif args.command == "commits":
             print(format_commits(collect_commits(args.login)))
+        elif args.command == "pull-requests":
+            print(format_pull_requests(collect_pull_requests(args.login)))
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
