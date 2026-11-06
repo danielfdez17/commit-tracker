@@ -168,6 +168,29 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS following_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            following INTEGER NOT NULL,
+            user_count INTEGER NOT NULL,
+            organization_count INTEGER NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS following_member_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            followed_login TEXT NOT NULL,
+            account_type TEXT NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -448,4 +471,37 @@ def save_follower_changes(
             ) VALUES (?, ?, ?, ?)
             """,
             rows,
+        )
+
+
+def save_following_snapshot(
+    *,
+    login: str,
+    following: int,
+    user_count: int,
+    organization_count: int,
+    users: tuple[str, ...],
+    organizations: tuple[str, ...],
+    collected_at: str,
+) -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO following_snapshots (
+                login, following, user_count, organization_count, collected_at
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (login, following, user_count, organization_count, collected_at),
+        )
+        connection.executemany(
+            """
+            INSERT INTO following_member_snapshots (
+                login, followed_login, account_type, collected_at
+            ) VALUES (?, ?, ?, ?)
+            """,
+            [(login, followed_login, "User", collected_at) for followed_login in users]
+            + [
+                (login, followed_login, "Organization", collected_at)
+                for followed_login in organizations
+            ],
         )
