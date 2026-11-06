@@ -26,6 +26,18 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS streak_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            current_streak INTEGER NOT NULL,
+            streak_from TEXT,
+            streak_to TEXT,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -46,4 +58,23 @@ def save_contribution_snapshot(
             ) VALUES (?, ?, ?, ?, ?, ?)
             """,
             (login, scope, total, period_from, period_to, collected_at),
+        )
+
+
+def save_streak_snapshot(
+    *,
+    login: str,
+    current_streak: int,
+    streak_from: str | None,
+    streak_to: str | None,
+    collected_at: str,
+) -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO streak_snapshots (
+                login, current_streak, streak_from, streak_to, collected_at
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (login, current_streak, streak_from, streak_to, collected_at),
         )
