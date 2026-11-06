@@ -50,6 +50,21 @@ def connect() -> sqlite3.Connection:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS language_snapshots (
+            id INTEGER PRIMARY KEY,
+            login TEXT NOT NULL,
+            language TEXT NOT NULL,
+            color TEXT,
+            bytes INTEGER NOT NULL,
+            share REAL NOT NULL,
+            rank INTEGER NOT NULL,
+            repository_count INTEGER NOT NULL,
+            collected_at TEXT NOT NULL
+        )
+        """
+    )
     return connection
 
 
@@ -108,4 +123,35 @@ def save_longest_streak_snapshot(
             ) VALUES (?, ?, ?, ?, ?)
             """,
             (login, longest_streak, streak_from, streak_to, collected_at),
+        )
+
+
+def save_language_snapshots(
+    *,
+    login: str,
+    repository_count: int,
+    collected_at: str,
+    languages: tuple,
+) -> None:
+    with connect() as connection:
+        connection.executemany(
+            """
+            INSERT INTO language_snapshots (
+                login, language, color, bytes, share, rank,
+                repository_count, collected_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    login,
+                    language.name,
+                    language.color,
+                    language.size,
+                    language.share,
+                    language.rank,
+                    repository_count,
+                    collected_at,
+                )
+                for language in languages
+            ],
         )
