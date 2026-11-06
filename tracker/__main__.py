@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+from tracker.commits import collect_commits, format_report as format_commits
 from tracker.contributions import collect_contributions, format_report as format_contributions
 from tracker.gh import GhError
 from tracker.languages import collect_top_languages, format_report as format_languages
@@ -41,6 +42,11 @@ def main(argv: list[str] | None = None) -> int:
         parents=[login],
         help="Top languages by code size",
     )
+    subcommands.add_parser(
+        "commits",
+        parents=[login],
+        help="Total contribution commits",
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -52,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
             print(format_longest_report(collect_longest_streak(args.login)))
         elif args.command == "languages":
             print(format_languages(collect_top_languages(args.login)))
+        elif args.command == "commits":
+            print(format_commits(collect_commits(args.login)))
     except (GhError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
