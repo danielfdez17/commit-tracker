@@ -6,8 +6,9 @@ import html
 import re
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
-from tracker.store import connect
+from tracker.store import ROOT, connect
 
 _COLOR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 _LOGIN_TABLES = (
@@ -210,8 +211,103 @@ def load_dashboard(login: str | None = None) -> Dashboard:
         connection.close()
 
 
+STYLESHEET = """
+:root {
+  color-scheme: light dark;
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --text: #1c2128;
+  --muted: #5c6773;
+  --line: #d8dee6;
+  --accent: #1f6feb;
+  --open: #9a6700;
+  --closed: #59636e;
+  --merged: #1f6feb;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --line: #30363d;
+    --accent: #4493f8;
+    --open: #d4a72c;
+    --closed: #8b949e;
+    --merged: #4493f8;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 15px/1.45 ui-sans-serif, system-ui, sans-serif;
+}
+main { max-width: 1040px; margin: 0 auto; padding: 28px 20px 56px; }
+h1 { margin: 0; font-size: 24px; font-weight: 500; }
+h2 { margin: 0 0 10px; font-size: 16px; font-weight: 500; }
+p { margin: 0; }
+.lede { margin: 6px 0 20px; color: var(--muted); }
+.hero { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-end; margin-bottom: 18px; }
+.hero .value { font-size: 40px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+.hero .aside { font-size: 22px; font-weight: 500; line-height: 1; }
+.hero .label, .when, .stat span, figcaption { color: var(--muted); font-size: 12px; }
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.stat b { display: block; font-size: 20px; font-weight: 500; }
+.stat .detail { display: block; white-space: nowrap; }
+section { margin-top: 28px; }
+.charts figure + figure { margin-top: 22px; }
+.split { display: grid; grid-template-columns: 1.35fr 0.8fr; gap: 28px; }
+figure { margin: 0; }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: var(--muted); font-size: 11px; font-family: ui-sans-serif, system-ui, sans-serif; }
+svg rect { fill: var(--accent); }
+svg line { stroke: var(--line); }
+.lang {
+  display: grid;
+  grid-template-columns: minmax(108px, 150px) 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin: 5px 0;
+}
+.track { height: 8px; border-radius: 4px; background: var(--line); }
+.fill { height: 8px; border-radius: 4px; }
+.also { margin-top: 8px; color: var(--muted); }
+.stack { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); }
+.stack i { display: block; height: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px 16px; margin: 8px 0 0; padding: 0; list-style: none; }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.swatch { width: 8px; height: 8px; border-radius: 2px; background: var(--swatch); }
+.names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.names span, .org {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 13px;
+}
+.orgs { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 8px; }
+.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px; }
+@media (max-width: 800px) {
+  .split { grid-template-columns: 1fr; }
+  .hero .value { font-size: 32px; }
+  svg text { font-size: 20px; }
+}
+""".lstrip()
+
+
 def render_dashboard(dashboard: Dashboard) -> str:
-    """Return a self-contained HTML page for one dashboard."""
+    """Return the dashboard HTML. Styles live in style.css beside the page."""
     login = _esc(dashboard.login)
     sections = [
         _hero(dashboard),
@@ -228,99 +324,7 @@ def render_dashboard(dashboard: Dashboard) -> str:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{login} · GitHub activity</title>
-<style>
-  :root {{
-    color-scheme: light dark;
-    --bg: #f4f6f8;
-    --surface: #ffffff;
-    --text: #1c2128;
-    --muted: #5c6773;
-    --line: #d8dee6;
-    --accent: #1f6feb;
-    --open: #9a6700;
-    --closed: #59636e;
-    --merged: #1f6feb;
-  }}
-  @media (prefers-color-scheme: dark) {{
-    :root {{
-      --bg: #0d1117;
-      --surface: #161b22;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --line: #30363d;
-      --accent: #4493f8;
-      --open: #d4a72c;
-      --closed: #8b949e;
-      --merged: #4493f8;
-    }}
-  }}
-  * {{ box-sizing: border-box; }}
-  body {{
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 400 15px/1.45 ui-sans-serif, system-ui, sans-serif;
-  }}
-  main {{ max-width: 1040px; margin: 0 auto; padding: 28px 20px 56px; }}
-  h1 {{ margin: 0; font-size: 24px; font-weight: 500; }}
-  h2 {{ margin: 0 0 10px; font-size: 16px; font-weight: 500; }}
-  p {{ margin: 0; }}
-  .lede {{ margin: 6px 0 20px; color: var(--muted); }}
-  .hero {{ display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-end; margin-bottom: 18px; }}
-  .hero .value {{ font-size: 40px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }}
-  .hero .aside {{ font-size: 22px; font-weight: 500; line-height: 1; }}
-  .hero .label, .when, .stat span, figcaption {{ color: var(--muted); font-size: 12px; }}
-  .stats {{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 10px;
-  }}
-  .stat {{
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 10px 12px;
-  }}
-  .stat b {{ display: block; font-size: 20px; font-weight: 500; }}
-  .stat .detail {{ display: block; white-space: nowrap; }}
-  section {{ margin-top: 28px; }}
-  .charts figure + figure {{ margin-top: 22px; }}
-  .split {{ display: grid; grid-template-columns: 1.35fr 0.8fr; gap: 28px; }}
-  figure {{ margin: 0; }}
-  svg {{ width: 100%; height: auto; display: block; }}
-  svg text {{ fill: var(--muted); font-size: 11px; font-family: ui-sans-serif, system-ui, sans-serif; }}
-  svg rect {{ fill: var(--accent); }}
-  svg line {{ stroke: var(--line); }}
-  .lang {{
-    display: grid;
-    grid-template-columns: minmax(108px, 150px) 1fr auto;
-    gap: 8px;
-    align-items: center;
-    margin: 5px 0;
-  }}
-  .track {{ height: 8px; border-radius: 4px; background: var(--line); }}
-  .fill {{ height: 8px; border-radius: 4px; }}
-  .also {{ margin-top: 8px; color: var(--muted); }}
-  .stack {{ display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); }}
-  .stack i {{ display: block; height: 10px; }}
-  .legend {{ display: flex; flex-wrap: wrap; gap: 12px 16px; margin: 8px 0 0; padding: 0; list-style: none; }}
-  .legend li {{ display: flex; align-items: center; gap: 6px; }}
-  .swatch {{ width: 8px; height: 8px; border-radius: 2px; background: var(--swatch); }}
-  .names {{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }}
-  .names span, .org {{
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 2px 8px;
-    font-size: 13px;
-  }}
-  .orgs {{ display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 8px; }}
-  .columns {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px; }}
-  @media (max-width: 800px) {{
-    .split {{ grid-template-columns: 1fr; }}
-    .hero .value {{ font-size: 32px; }}
-    svg text {{ font-size: 20px; }}
-  }}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
@@ -333,8 +337,20 @@ def render_dashboard(dashboard: Dashboard) -> str:
 """
 
 
+def write_pages(login: str | None = None) -> tuple[Path, Path]:
+    """Write docs/index.html and docs/style.css for GitHub Pages."""
+    directory = ROOT / "docs"
+    directory.mkdir(parents=True, exist_ok=True)
+    html_path = directory / "index.html"
+    css_path = directory / "style.css"
+    html_path.write_text(render_dashboard(load_dashboard(login)), encoding="utf-8")
+    css_path.write_text(STYLESHEET, encoding="utf-8")
+    return html_path, css_path
+
+
 def serve_dashboard(login: str | None = None, host: str = "127.0.0.1", port: int = 8765) -> None:
     """Serve the dashboard until interrupted."""
+    write_pages(login)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
@@ -343,21 +359,26 @@ def serve_dashboard(login: str | None = None, host: str = "127.0.0.1", port: int
                 self.send_response(204)
                 self.end_headers()
                 return
-            if path != "/":
+            if path == "/style.css":
+                payload = STYLESHEET.encode()
+                content_type = "text/css; charset=utf-8"
+            elif path in ("/", "/index.html"):
+                try:
+                    payload = render_dashboard(load_dashboard(login)).encode()
+                except RuntimeError as error:
+                    message = str(error).encode()
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(message)))
+                    self.end_headers()
+                    self.wfile.write(message)
+                    return
+                content_type = "text/html; charset=utf-8"
+            else:
                 self.send_error(404)
                 return
-            try:
-                payload = render_dashboard(load_dashboard(login)).encode()
-            except RuntimeError as error:
-                message = str(error).encode()
-                self.send_response(500)
-                self.send_header("Content-Type", "text/plain; charset=utf-8")
-                self.send_header("Content-Length", str(len(message)))
-                self.end_headers()
-                self.wfile.write(message)
-                return
             self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
             self.wfile.write(payload)
