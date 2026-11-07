@@ -7,7 +7,8 @@ on:
     branches: ["main"]
   # Runs every day at 09:00 UTC
   schedule:
-    - cron: "0 0 * * 0"  # Allows you to run this workflow manually from the Actions tab
+    - cron: "0 0 * * 0"
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
